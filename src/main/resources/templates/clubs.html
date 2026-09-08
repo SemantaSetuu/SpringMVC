@@ -1,0 +1,18 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>Club List</title>
+</head>
+<body>
+
+<h1>All Clubs</h1>
+
+<div th:each="club : ${clubs}">
+    <h2 th:text="${club.title}">Club Title</h2>
+    <p th:text="${club.content}">Club Content</p>
+    <hr>
+</div>
+
+</body>
+</html>
+``
