@@ -418,12 +418,474 @@ Manages Lifecycle
 
 ---
 
-# Next Topics (Day 2)
+---
 
-- Interface
-- Loose Coupling
-- @Qualifier
+# Day 2 - Interface, Loose Coupling, Dependency Injection & @Qualifier
+
+## Q13. What is Tight Coupling?
+
+### Answer
+
+Tight Coupling occurs when one class directly depends on a concrete implementation.
+
+Example:
+
+```java
+public class OrderService {
+
+    private CreditService creditService =
+            new CreditService();
+}
+```
+
+Problem:
+
+If tomorrow we replace:
+
+```java
+CreditService
+```
+
+with:
+
+```java
+UpiService
+```
+
+we must modify the `OrderService` class.
+
+This makes the code harder to maintain and extend.
+
+---
+
+# Q14. What is Loose Coupling?
+
+### Answer
+
+Loose Coupling means a class depends on an abstraction (Interface) instead of a concrete implementation.
+
+Example:
+
+```java
+public class OrderService {
+
+    private PaymentService paymentService;
+
+    public OrderService(PaymentService paymentService){
+        this.paymentService = paymentService;
+    }
+}
+```
+
+Benefits:
+
+- Flexible
+- Easy Maintenance
+- Easy Testing
+- Easy Implementation Replacement
+- Follows SOLID Principles
+
+---
+
+# Q15. What is an Interface?
+
+### Answer
+
+An Interface defines a contract.
+
+It tells implementing classes:
+
+```text
+WHAT must be done
+```
+
+without specifying:
+
+```text
+HOW it should be done
+```
+
+Example:
+
+```java
+public interface PaymentService {
+
+    void processPayment();
+}
+```
+
+Any class implementing this interface must provide an implementation for:
+
+```java
+processPayment();
+```
+
+---
+
+# Plain Java Example - Loose Coupling + Constructor Injection
+
+This example demonstrates Loose Coupling without Spring.
+
+```java
+interface PaymentService {
+
+    void processPayment();
+}
+
+class CreditService implements PaymentService {
+
+    @Override
+    public void processPayment() {
+
+        System.out.println(
+                "Payment Processed by Credit Card");
+    }
+}
+
+class UpiService implements PaymentService {
+
+    @Override
+    public void processPayment() {
+
+        System.out.println(
+                "Payment Processed by UPI");
+    }
+}
+
+class OrderService {
+
+    private PaymentService paymentService;
+
+    public OrderService(
+            PaymentService paymentService) {
+
+        this.paymentService = paymentService;
+    }
+
+    public void orderProceed() {
+
+        paymentService.processPayment();
+
+        System.out.println(
+                "Order Completed");
+    }
+}
+
+public class Main {
+
+    public static void main(String[] args) {
+
+        OrderService orderService =
+                new OrderService(
+                        new CreditService());
+
+        orderService.orderProceed();
+    }
+}
+```
+
+### Why is this Loose Coupling?
+
+Because:
+
+```java
+OrderService
+```
+
+depends on:
+
+```java
+PaymentService
+```
+
+instead of:
+
+```java
+CreditService
+```
+
+We can easily switch:
+
+```java
+new CreditService()
+```
+
+to:
+
+```java
+new UpiService()
+```
+
+without modifying `OrderService`.
+
+---
+
+# Spring Version of Loose Coupling
+
+## Interface
+
+```java
+public interface PaymentService {
+
+    void processPayment();
+}
+```
+
+---
+
+## CreditService
+
+```java
+@Service
+public class CreditService
+        implements PaymentService {
+
+    @Override
+    public void processPayment() {
+
+        System.out.println(
+                "Payment Processed By Credit Card");
+    }
+}
+```
+
+---
+
+## UpiService
+
+```java
+@Service
+public class UpiService
+        implements PaymentService {
+
+    @Override
+    public void processPayment() {
+
+        System.out.println(
+                "Payment Processed By UPI");
+    }
+}
+```
+
+---
+
+## OrderService
+
+```java
+@Service
+public class OrderService {
+
+    private final PaymentService paymentService;
+
+    public OrderService(
+            PaymentService paymentService) {
+
+        this.paymentService = paymentService;
+    }
+}
+```
+
+---
+
+# Problem: Multiple Bean Implementations
+
+Spring found:
+
+```java
+CreditService
+```
+
+and
+
+```java
+UpiService
+```
+
+because both implement:
+
+```java
+PaymentService
+```
+
+Then Spring sees:
+
+```java
+public OrderService(
+        PaymentService paymentService)
+```
+
+and becomes confused.
+
+Error:
+
+```text
+required a single bean,
+but 2 were found:
+
+creditService
+upiService
+```
+
+Reason:
+
+Spring doesn't know which implementation should be injected.
+
+---
+
+# Q16. What is @Qualifier?
+
+### Answer
+
+`@Qualifier` tells Spring exactly which Bean to inject when multiple implementations exist.
+
+Example:
+
+```java
+public OrderService(
+
+    @Qualifier("creditService")
+    PaymentService paymentService
+) {
+
+    this.paymentService = paymentService;
+}
+```
+
+Meaning:
+
+```text
+Inject CreditService Bean.
+```
+
+---
+
+# What Happens Without @Qualifier?
+
+Spring finds:
+
+```text
+CreditService
+UpiService
+```
+
+and throws:
+
+```text
+NoUniqueBeanDefinitionException
+```
+
+because multiple implementations match the same interface.
+
+---
+
+# What Happens With @Qualifier?
+
+Example:
+
+```java
+@Qualifier("creditService")
+```
+
+Output:
+
+```text
+Payment Processed By Credit Card
+Order Completed
+```
+
+If changed to:
+
+```java
+@Qualifier("upiService")
+```
+
+Output:
+
+```text
+Payment Processed By UPI
+Order Completed
+```
+
+---
+
+# Important Understanding
+
+The following class never changes:
+
+```java
+OrderService
+```
+
+Only the injected implementation changes.
+
+Example:
+
+```java
+CreditService
+```
+
+↓
+
+```java
+UpiService
+```
+
+This is the biggest benefit of Loose Coupling.
+
+---
+
+# Day 2 Completion Status
+
+✅ Interface
+
+✅ Tight Coupling
+
+✅ Loose Coupling
+
+✅ Constructor Injection (Java)
+
+✅ Constructor Injection (Spring)
+
+✅ Polymorphism
+
+✅ Programming to Interfaces
+
+✅ Multiple Implementations
+
+✅ Spring Bean Ambiguity
+
+✅ NoUniqueBeanDefinitionException
+
+✅ @Qualifier
+
+---
+
+# Next Topics
+
 - @Primary
-- Multiple Bean Implementations
-- Real-world Dependency Injection
+- @Repository
+- @Controller
+- MVC Flow Revision
+
+MVC Flow:
+
+```text
+Browser
+      ↓
+Controller
+      ↓
+Service
+      ↓
+Repository
+      ↓
+Database
+```
+
+After completing the above topics:
+
+✅ Spring Core Revision Complete
+
+✅ Spring MVC Quick Revision
+
+✅ Move Back To Spring Boot
 
